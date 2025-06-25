@@ -4,6 +4,7 @@ package com.oliver.gestor_de_gastos.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,12 +74,26 @@ fun MainFinanzasView(
     var showIngresoDialog by remember { mutableStateOf(false) }
     var montoIngreso by remember { mutableStateOf(0) }
     var showConfigDialog by remember { mutableStateOf(false) }
+    var showCategoriaExistenteDialog by remember { mutableStateOf(false) }
+    var categoriaParaVerRegistros by remember { mutableStateOf<Categoria?>(null) }
+    var registrosCategoria by remember { mutableStateOf(listOf<Registro>()) }
 
     // Cargar datos al iniciar
     LaunchedEffect(Unit) {
         saldo = controller.obtenerSaldoActual()
         gastoTotal = controller.obtenerGastoTotal()
         categorias = controller.obtenerCategorias()
+    }
+
+    if (categoriaParaVerRegistros != null) {
+        ViewRegistroCategoria(
+            categoriaNombre = categoriaParaVerRegistros!!.nombre,
+            registros = registrosCategoria,
+            onBack = {
+                categoriaParaVerRegistros = null
+            }
+        )
+        return
     }
 
     Column(
@@ -123,6 +138,17 @@ fun MainFinanzasView(
                         .background(Color.White, shape = RectangleShape)
                         .border(1.dp, Color.LightGray, shape = RectangleShape)
                         .padding(8.dp)
+                        .clickable {
+                            categoriaParaVerRegistros = cat
+                            // Conversión de Gasto a Registro para la vista
+                            registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id).map {
+                                Registro(
+                                    fecha = it.fecha,
+                                    monto = it.monto.toDouble(),
+                                    descripcion = it.descripcion
+                                )
+                            }
+                        }
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -234,10 +260,16 @@ fun MainFinanzasView(
             confirmButton = {
                 Button(onClick = {
                     if (nuevaCategoriaNombre.isNotBlank()) {
-                        categoriaController.registrarCategoria(nuevaCategoriaNombre)
-                        categorias = controller.obtenerCategorias()
-                        nuevaCategoriaNombre = ""
-                        showAddCategoriaDialog = false
+                        val registrada = categoriaController.registrarCategoria(nuevaCategoriaNombre)
+                        if (registrada) {
+                            categorias = controller.obtenerCategorias()
+                            nuevaCategoriaNombre = ""
+                            showAddCategoriaDialog = false
+                        } else {
+                            // Mostrar mensaje de error si ya existe
+                            nuevaCategoriaNombre = ""
+                            showCategoriaExistenteDialog = true
+                        }
                     }
                 }) {
                     Text("Agregar")
@@ -342,6 +374,18 @@ fun MainFinanzasView(
             confirmButton = {
                 Button(onClick = { showConfigDialog = false }) {
                     Text("Cerrar")
+                }
+            }
+        )
+    }
+    if (showCategoriaExistenteDialog) {
+        AlertDialog(
+            onDismissRequest = { showCategoriaExistenteDialog = false },
+            title = { Text("Error") },
+            text = { Text("El nombre de la categoría ya existe.") },
+            confirmButton = {
+                Button(onClick = { showCategoriaExistenteDialog = false }) {
+                    Text("Aceptar")
                 }
             }
         )

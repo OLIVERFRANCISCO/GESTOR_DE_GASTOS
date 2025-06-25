@@ -66,5 +66,25 @@ class FinanzasController(private val context: Context) {
         db.execSQL("INSERT INTO Gastos (id_categoria, id_transaction, Description, Monto) VALUES ($idCategoria, $idTrans, '$descripcion', $monto)")
         db.close()
     }
-}
 
+    fun obtenerRegistrosPorCategoria(idCategoria: Int): List<Gasto> {
+        val db = dbHelper.readableDatabase
+        val cursor = db.rawQuery("SELECT id, id_categoria, id_transaction, Description, Fecha_registro, Monto FROM Gastos WHERE id_categoria = ?", arrayOf(idCategoria.toString()))
+        val gastos = mutableListOf<Gasto>()
+        while (cursor.moveToNext()) {
+            gastos.add(
+                Gasto(
+                    id = cursor.getInt(0),
+                    idCategoria = cursor.getInt(1),
+                    idTransaccion = cursor.getInt(2),
+                    descripcion = cursor.getString(3),
+                    fecha = cursor.getString(4),
+                    monto = cursor.getInt(5)
+                )
+            )
+        }
+        cursor.close()
+        db.close()
+        return gastos
+    }
+}
