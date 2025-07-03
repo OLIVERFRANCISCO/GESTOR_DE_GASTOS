@@ -2,6 +2,7 @@ package com.oliver.gestor_de_gastos.controller
 
 import android.content.Context
 import com.oliver.gestor_de_gastos.DatabaseHelper
+import com.oliver.gestor_de_gastos.model.Categoria
 
 class CategoriaController(private val context: Context) {
     private val dbHelper = DatabaseHelper(context)
@@ -35,5 +36,21 @@ class CategoriaController(private val context: Context) {
         val db = dbHelper.writableDatabase
         db.execSQL("DELETE FROM Categorias WHERE id = ?", arrayOf(id))
         db.close()
+    }
+
+    fun obtenerCategorias(): List<Categoria> {
+        val db = dbHelper.readableDatabase
+        val cursor = db.rawQuery("SELECT id, nombre FROM Categorias", null)
+        val categorias = mutableListOf<Categoria>()
+        if (cursor.moveToFirst()) {
+            do {
+                val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
+                val nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre"))
+                categorias.add(Categoria(id, nombre))
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        db.close()
+        return categorias
     }
 }

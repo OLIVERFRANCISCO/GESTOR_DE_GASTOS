@@ -60,7 +60,7 @@ fun MainFinanzasView(
     val categoriaController = remember { CategoriaController(context) }
     var saldo by remember { mutableStateOf(0) }
     var gastoTotal by remember { mutableStateOf(0) }
-    var categorias by remember { mutableStateOf(listOf<Categoria>()) }
+    var categorias by remember { mutableStateOf(controller.obtenerCategorias()) }
     var showDialog by remember { mutableStateOf(false) }
     var montoGasto by remember { mutableStateOf(0) }
     var categoriaSeleccionada by remember { mutableStateOf<Categoria?>(null) }
@@ -111,13 +111,7 @@ fun MainFinanzasView(
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            IconButton(onClick = { showConfigDialog = true }) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "Configuración",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            // Botón de configuración eliminado para cumplir con la navegación inferior
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text("Gasto total: $gastoTotal", style = MaterialTheme.typography.bodyLarge)
@@ -135,12 +129,11 @@ fun MainFinanzasView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
-                        .background(Color.White, shape = RectangleShape)
-                        .border(1.dp, Color.LightGray, shape = RectangleShape)
+                        .background(MaterialTheme.colorScheme.background, shape = RectangleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, shape = RectangleShape)
                         .padding(8.dp)
                         .clickable {
                             categoriaParaVerRegistros = cat
-                            // Conversión de Gasto a Registro para la vista
                             registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id).map {
                                 Registro(
                                     fecha = it.fecha,
@@ -156,9 +149,13 @@ fun MainFinanzasView(
                     ) {
                         Text(cat.nombre, modifier = Modifier.weight(1f))
                         Box {
-                            IconButton(onClick = { categoriaMenuExpandedId = cat.id }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
-                            }
+                            // Menú de opciones de categoría sin iconos
+                            Text(
+                                text = "⋮",
+                                modifier = Modifier
+                                    .clickable { categoriaMenuExpandedId = cat.id }
+                                    .padding(horizontal = 8.dp)
+                            )
                             DropdownMenu(
                                 expanded = categoriaMenuExpandedId == cat.id,
                                 onDismissRequest = { categoriaMenuExpandedId = null }
@@ -266,7 +263,6 @@ fun MainFinanzasView(
                             nuevaCategoriaNombre = ""
                             showAddCategoriaDialog = false
                         } else {
-                            // Mostrar mensaje de error si ya existe
                             nuevaCategoriaNombre = ""
                             showCategoriaExistenteDialog = true
                         }
@@ -359,16 +355,6 @@ fun MainFinanzasView(
                             enabled = !isDarkTheme
                         ) { Text("Oscuro") }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = {
-                        DatabaseHelper.onUpgrade()
-                        saldo = controller.obtenerSaldoActual()
-                        gastoTotal = controller.obtenerGastoTotal()
-                        categorias = controller.obtenerCategorias()
-                        showConfigDialog = false
-                    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))) {
-                        Text("Resetear base de datos")
-                    }
                 }
             },
             confirmButton = {
@@ -391,9 +377,6 @@ fun MainFinanzasView(
         )
     }
 }
-
-
-
 
 @Composable
 fun DropdownMenuCategorias(
