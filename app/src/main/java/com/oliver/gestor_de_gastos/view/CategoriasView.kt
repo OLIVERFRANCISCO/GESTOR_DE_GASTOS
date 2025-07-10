@@ -1,21 +1,50 @@
 package com.oliver.gestor_de_gastos.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.oliver.gestor_de_gastos.controller.CategoriaController
+import com.oliver.gestor_de_gastos.controller.FinanzasController
 import com.oliver.gestor_de_gastos.model.Categoria
 
 @Composable
-fun CategoriasView() {
+fun CategoriasView(
+
+) {
     val context = LocalContext.current
+    val controller = remember { FinanzasController(context) }
     val categoriaController = remember { CategoriaController(context) }
     var categorias by remember { mutableStateOf<List<Categoria>>(emptyList()) }
     var showAddCategoriaDialog by remember { mutableStateOf(false) }
@@ -25,66 +54,80 @@ fun CategoriasView() {
     var editCategoriaNombre by remember { mutableStateOf("") }
     var categoriaMenuExpandedId by remember { mutableStateOf<Int?>(null) }
     var showCategoriaExistenteDialog by remember { mutableStateOf(false) }
+    var categoriaParaVerRegistros by remember { mutableStateOf<Categoria?>(null) }
+    var registrosCategoria by remember { mutableStateOf(listOf<Registro>()) }
+
 
     // Cargar categorías al iniciar la vista y tras cambios
-    LaunchedEffect(showAddCategoriaDialog, showEditCategoriaDialog, showCategoriaExistenteDialog) {
+    LaunchedEffect(Unit) {
         categorias = categoriaController.obtenerCategorias()
     }
+
+    if (categoriaParaVerRegistros != null) {
+        ViewRegistroCategoria(
+            categoriaNombre = categoriaParaVerRegistros!!.nombre,
+            registros = registrosCategoria,
+            onBack = {
+                categoriaParaVerRegistros = null
+            }
+        )
+        return
+    }
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Categorías de gastos:", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { showAddCategoriaDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))) {
+            Button(
+                onClick = { showAddCategoriaDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
                 Text("Agregar categoría")
             }
         }
-//        LazyColumn(modifier = Modifier.height(420.dp)) {
-//            items(categorias, key = { it.id }) { cat ->
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(vertical = 4.dp)
-//                        .padding(8.dp)
-//                ) {
-//                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier = Modifier.fillMaxWidth()
-//                    ) {
-//                        Text(cat.nombre, modifier = Modifier.weight(1f))
-//                        Box {
-//                            Text(
-//                                text = "⋮",
-//                                modifier = Modifier
-//                                    .clickable { categoriaMenuExpandedId = cat.id }
-//                                    .padding(horizontal = 8.dp)
-//                            )
-//                            DropdownMenu(
-//                                expanded = categoriaMenuExpandedId == cat.id,
-//                                onDismissRequest = { categoriaMenuExpandedId = null }
-//                            ) {
-//                                DropdownMenuItem(
-//                                    text = { Text("Editar") },
-//                                    onClick = {
-//                                        categoriaEnEdicion = cat
-//                                        editCategoriaNombre = cat.nombre
-//                                        showEditCategoriaDialog = true
-//                                        categoriaMenuExpandedId = null
-//                                    }
-//                                )
-//                                DropdownMenuItem(
-//                                    text = { Text("Eliminar") },
-//                                    onClick = {
-//                                        categoriaController.eliminarCategoria(cat.id)
-//                                        // La lista se recarga automáticamente por LaunchedEffect
-//                                        categoriaMenuExpandedId = null
-//                                    }
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        Spacer(modifier = Modifier.height(16.dp))
+        categorias.forEach { cat ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable {
+                        categoriaParaVerRegistros = cat
+                        registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id).map {
+                            Registro(
+                                fecha = it.fecha,
+                                monto = it.monto.toDouble(),
+                                descripcion = it.descripcion
+                            )
+                        }
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text(cat.nombre, modifier = Modifier.weight(1f))
+                    IconButton(onClick = {
+                        categoriaEnEdicion = cat
+                        editCategoriaNombre = cat.nombre
+                        showEditCategoriaDialog = true
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    }
+                    IconButton(onClick = {
+                        categoriaController.eliminarCategoria(cat.id)
+                        categorias = categoriaController.obtenerCategorias()
+                    }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    }
+                }
+            }
+        }
     }
     if (showAddCategoriaDialog) {
         AlertDialog(

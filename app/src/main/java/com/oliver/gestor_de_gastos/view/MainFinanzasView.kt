@@ -116,74 +116,7 @@ fun MainFinanzasView(
         Spacer(modifier = Modifier.height(8.dp))
         Text("Gasto total: $gastoTotal", style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Categorías de gastos:", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { showAddCategoriaDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))) {
-                Text("Agregar categoría")
-            }
-        }
-        LazyColumn(modifier = Modifier.height(420.dp)) {
-            items(categorias) { cat ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .background(MaterialTheme.colorScheme.background, shape = RectangleShape)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, shape = RectangleShape)
-                        .padding(8.dp)
-                        .clickable {
-                            categoriaParaVerRegistros = cat
-                            registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id).map {
-                                Registro(
-                                    fecha = it.fecha,
-                                    monto = it.monto.toDouble(),
-                                    descripcion = it.descripcion
-                                )
-                            }
-                        }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(cat.nombre, modifier = Modifier.weight(1f))
-                        Box {
-                            // Menú de opciones de categoría sin iconos
-                            Text(
-                                text = "⋮",
-                                modifier = Modifier
-                                    .clickable { categoriaMenuExpandedId = cat.id }
-                                    .padding(horizontal = 8.dp)
-                            )
-                            DropdownMenu(
-                                expanded = categoriaMenuExpandedId == cat.id,
-                                onDismissRequest = { categoriaMenuExpandedId = null }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Editar") },
-                                    onClick = {
-                                        categoriaEnEdicion = cat
-                                        editCategoriaNombre = cat.nombre
-                                        showEditCategoriaDialog = true
-                                        categoriaMenuExpandedId = null
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Eliminar") },
-                                    onClick = {
-                                        categoriaController.eliminarCategoria(cat.id)
-                                        categorias = controller.obtenerCategorias()
-                                        categoriaMenuExpandedId = null
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -408,3 +341,4 @@ fun DropdownMenuCategorias(
 fun MainFinanzasViewPreview() {
     MainFinanzasView(isDarkTheme = false, onThemeChange = {})
 }
+
