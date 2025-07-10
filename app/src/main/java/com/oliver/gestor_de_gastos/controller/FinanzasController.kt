@@ -21,49 +21,49 @@ class FinanzasController(private val context: Context) {
         return categorias
     }
 
-    fun obtenerSaldoActual(): Int {
+    fun obtenerSaldoActual(): Double {
         val db = dbHelper.readableDatabase
         val cursorIngresos = db.rawQuery("SELECT SUM(Monto) FROM Ingresos", null)
         val cursorGastos = db.rawQuery("SELECT SUM(Monto) FROM Gastos", null)
-        var totalIngresos = 0
-        var totalGastos = 0
-        if (cursorIngresos.moveToFirst()) totalIngresos = cursorIngresos.getInt(0)
-        if (cursorGastos.moveToFirst()) totalGastos = cursorGastos.getInt(0)
+        var totalIngresos = 0.0
+        var totalGastos = 0.0
+        if (cursorIngresos.moveToFirst()) totalIngresos = cursorIngresos.getDouble(0)
+        if (cursorGastos.moveToFirst()) totalGastos = cursorGastos.getDouble(0)
         cursorIngresos.close()
         cursorGastos.close()
         db.close()
         return totalIngresos - totalGastos
     }
 
-    fun obtenerGastoTotal(): Int {
+    fun obtenerGastoTotal(): Double {
         val db = dbHelper.readableDatabase
         val cursor = db.rawQuery("SELECT SUM(Monto) FROM Gastos", null)
-        var total = 0
-        if (cursor.moveToFirst()) total = cursor.getInt(0)
+        var total = 0.0
+        if (cursor.moveToFirst()) total = cursor.getDouble(0)
         cursor.close()
         db.close()
         return total
     }
 
-    fun registrarIngreso(monto: Int, descripcion: String = "Ingreso pasivo") {
+    fun registrarIngreso(monto: Double, descripcion: String = "Ingreso pasivo") {
         val db = dbHelper.writableDatabase
-        db.execSQL("INSERT INTO Transacciones (name) VALUES ('Ingreso pasivo')")
-        val cursor = db.rawQuery("SELECT id FROM Transacciones ORDER BY id DESC LIMIT 1", null)
-        var idTrans = 1
-        if (cursor.moveToFirst()) idTrans = cursor.getInt(0)
+        db.execSQL("INSERT INTO Transacciones (tipo, descripcion) VALUES (?, ?)", arrayOf("INGRESO", descripcion))
+        val cursor = db.rawQuery("SELECT last_insert_rowid()", null)
+        var transId = 0
+        if (cursor.moveToFirst()) transId = cursor.getInt(0)
         cursor.close()
-        db.execSQL("INSERT INTO Ingresos (id_transaction, Description, Monto) VALUES ($idTrans, '$descripcion', $monto)")
+        db.execSQL("INSERT INTO Ingresos (id_transaction, Description, Monto) VALUES (?, ?, ?)", arrayOf(transId, descripcion, monto))
         db.close()
     }
 
-    fun registrarGasto(idCategoria: Int, monto: Int, descripcion: String = "Gasto registrado") {
+    fun registrarGasto(idCategoria: Int, monto: Double, descripcion: String = "Gasto") {
         val db = dbHelper.writableDatabase
-        db.execSQL("INSERT INTO Transacciones (name) VALUES ('Gasto registrado')")
-        val cursor = db.rawQuery("SELECT id FROM Transacciones ORDER BY id DESC LIMIT 1", null)
-        var idTrans = 1
-        if (cursor.moveToFirst()) idTrans = cursor.getInt(0)
+        db.execSQL("INSERT INTO Transacciones (tipo, descripcion) VALUES (?, ?)", arrayOf("GASTO", descripcion))
+        val cursor = db.rawQuery("SELECT last_insert_rowid()", null)
+        var transId = 0
+        if (cursor.moveToFirst()) transId = cursor.getInt(0)
         cursor.close()
-        db.execSQL("INSERT INTO Gastos (id_categoria, id_transaction, Description, Monto) VALUES ($idCategoria, $idTrans, '$descripcion', $monto)")
+        db.execSQL("INSERT INTO Gastos (id_categoria, id_transaction, Description, Monto) VALUES (?, ?, ?, ?)", arrayOf(idCategoria, transId, descripcion, monto))
         db.close()
     }
 
@@ -86,5 +86,17 @@ class FinanzasController(private val context: Context) {
         cursor.close()
         db.close()
         return gastos
+    }
+
+    fun editarGasto(id: Int, nuevaDescripcion: String, nuevoMonto: Double) {
+        val db = dbHelper.writableDatabase
+        db.execSQL("UPDATE Gastos SET Description = ?, Monto = ? WHERE id = ?", arrayOf(nuevaDescripcion, nuevoMonto, id))
+        db.close()
+    }
+
+    fun eliminarGasto(id: Int) {
+        val db = dbHelper.writableDatabase
+        db.execSQL("DELETE FROM Gastos WHERE id = ?", arrayOf(id))
+        db.close()
     }
 }

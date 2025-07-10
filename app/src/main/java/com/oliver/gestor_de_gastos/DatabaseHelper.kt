@@ -17,7 +17,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         db.execSQL("""
             CREATE TABLE Transacciones (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL
+                tipo TEXT NOT NULL, -- 'GASTO' o 'INGRESO'
+                descripcion TEXT,
+                fecha DATE NOT NULL DEFAULT CURRENT_DATE
             );
         """)
         db.execSQL("""
@@ -27,7 +29,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 id_transaction INTEGER NOT NULL,
                 Description TEXT NOT NULL,
                 Fecha_registro DATE NOT NULL DEFAULT CURRENT_DATE,
-                Monto INTEGER NOT NULL CHECK(Monto >= 0),
+                Monto REAL NOT NULL CHECK(Monto >= 0),
                 FOREIGN KEY (id_categoria) REFERENCES Categorias(id) ON DELETE CASCADE,
                 FOREIGN KEY (id_transaction) REFERENCES Transacciones(id) ON DELETE CASCADE
             );
@@ -38,7 +40,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 id_transaction INTEGER NOT NULL,
                 Description TEXT NOT NULL,
                 fecha_registro DATE NOT NULL DEFAULT CURRENT_DATE,
-                Monto INTEGER NOT NULL CHECK(Monto >= 0),
+                Monto REAL NOT NULL CHECK(Monto >= 0),
                 FOREIGN KEY (id_transaction) REFERENCES Transacciones(id) ON DELETE CASCADE
             );
         """)
@@ -66,4 +68,3 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val DATABASE_VERSION = 1
     }
 }
-
