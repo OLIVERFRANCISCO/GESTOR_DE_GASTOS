@@ -1,6 +1,5 @@
 package com.oliver.gestor_de_gastos.view
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,9 +38,7 @@ import com.oliver.gestor_de_gastos.controller.FinanzasController
 import com.oliver.gestor_de_gastos.model.Categoria
 
 @Composable
-fun CategoriasView(
-
-) {
+fun CategoriasView() {
     val context = LocalContext.current
     val controller = remember { FinanzasController(context) }
     val categoriaController = remember { CategoriaController(context) }
@@ -52,10 +48,9 @@ fun CategoriasView(
     var categoriaEnEdicion by remember { mutableStateOf<Categoria?>(null) }
     var showEditCategoriaDialog by remember { mutableStateOf(false) }
     var editCategoriaNombre by remember { mutableStateOf("") }
-    var categoriaMenuExpandedId by remember { mutableStateOf<Int?>(null) }
     var showCategoriaExistenteDialog by remember { mutableStateOf(false) }
     var categoriaParaVerRegistros by remember { mutableStateOf<Categoria?>(null) }
-    var registrosCategoria by remember { mutableStateOf(listOf<Registro>()) }
+    var registrosCategoria by remember { mutableStateOf(listOf<com.oliver.gestor_de_gastos.model.Gasto>()) }
 
 
     // Cargar categorías al iniciar la vista y tras cambios
@@ -78,12 +73,7 @@ fun CategoriasView(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Categorías de gastos:", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = { showAddCategoriaDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
+            Button(onClick = { showAddCategoriaDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))) {
                 Text("Agregar categoría")
             }
         }
@@ -95,17 +85,9 @@ fun CategoriasView(
                     .padding(vertical = 4.dp)
                     .clickable {
                         categoriaParaVerRegistros = cat
-                        registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id).map {
-                            Registro(
-                                fecha = it.fecha,
-                                monto = it.monto.toDouble(),
-                                descripcion = it.descripcion
-                            )
-                        }
+                        registrosCategoria = controller.obtenerRegistrosPorCategoria(cat.id)
                     },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

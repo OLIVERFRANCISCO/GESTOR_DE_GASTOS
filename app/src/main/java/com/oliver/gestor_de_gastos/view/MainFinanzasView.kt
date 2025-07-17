@@ -20,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.oliver.gestor_de_gastos.controller.CategoriaController
 import com.oliver.gestor_de_gastos.controller.FinanzasController
 import com.oliver.gestor_de_gastos.model.Categoria
+import java.util.Calendar
 
 
 @Composable
@@ -55,11 +57,25 @@ fun MainFinanzasView(
     var showIngresoDialog by remember { mutableStateOf(false) }
     var montoIngreso by remember { mutableStateOf(0.0) }
 
+    val calendar = Calendar.getInstance()
+    val meses = listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+    val anioActual = calendar.get(Calendar.YEAR)
+    val mesActual = calendar.get(Calendar.MONTH)
+    var mesSeleccionado by remember { mutableStateOf(mesActual) }
+    var anioSeleccionado by remember { mutableStateOf(anioActual) }
+    var datosGrafico by remember { mutableStateOf(emptyMap<Categoria, Double>()) }
+
     // Cargar datos al iniciar
     LaunchedEffect(Unit) {
         saldo = controller.obtenerSaldoActual()
         gastoTotal = controller.obtenerGastoTotal()
         categorias = controller.obtenerCategorias()
+        datosGrafico = categoriaController.obtenerGastosPorCategoriaEnMes(mesSeleccionado + 1, anioSeleccionado)
+    }
+
+    // Actualizar datos del gráfico al cambiar mes/año
+    LaunchedEffect(mesSeleccionado, anioSeleccionado) {
+        datosGrafico = categoriaController.obtenerGastosPorCategoriaEnMes(mesSeleccionado + 1, anioSeleccionado)
     }
 
     Column(
@@ -75,6 +91,54 @@ fun MainFinanzasView(
         Spacer(modifier = Modifier.height(8.dp))
         Text("Gasto total: $gastoTotal", style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(16.dp))
+        // Menú desplegable de mes y año en la parte superior del gráfico
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            // Dropdown de mes
+            var expandedMes by remember { mutableStateOf(false) }
+            Box {
+                OutlinedButton(onClick = { expandedMes = true }) {
+                    Text(meses[mesSeleccionado])
+                }
+                DropdownMenu(expanded = expandedMes, onDismissRequest = { expandedMes = false }) {
+                    meses.forEachIndexed { idx, mes ->
+                        DropdownMenuItem(text = { Text(mes) }, onClick = {
+                            mesSeleccionado = idx
+                            expandedMes = false
+                        })
+                    }
+                }
+            }
+            // Dropdown de año (últimos 5 años)
+            var expandedAnio by remember { mutableStateOf(false) }
+            val anios = (anioActual downTo anioActual - 4).toList()
+            Box {
+                OutlinedButton(onClick = { expandedAnio = true }) {
+                    Text(anioSeleccionado.toString())
+                }
+                DropdownMenu(expanded = expandedAnio, onDismissRequest = { expandedAnio = false }) {
+                    anios.forEach { anio ->
+                        DropdownMenuItem(text = { Text(anio.toString()) }, onClick = {
+                            anioSeleccionado = anio
+                            expandedAnio = false
+                        })
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(15.dp))
+        Surface(
+            color = MaterialTheme.colorScheme.background
+        ) {
+            if (datosGrafico.isNotEmpty()) {
+                ChartPay(
+                    porcentajes = datosGrafico.values.map { it.toFloat() }.toFloatArray(),
+                    labels = datosGrafico.keys.map { it.nombre }
+                )
+            } else {
+                Text("No hay datos para este mes/año", modifier = Modifier.padding(16.dp))
+            }
+        }
+        Spacer(modifier = Modifier.height(5.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -179,6 +243,7 @@ fun MainFinanzasView(
         )
     }
 }
+
 
 @Composable
 fun DropdownMenuCategorias(
